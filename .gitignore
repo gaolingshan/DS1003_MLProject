@@ -1,0 +1,7 @@
+*.csv
+*.txt
+*.p
+*.sh
+*.npy
+*.out
+*.pyc

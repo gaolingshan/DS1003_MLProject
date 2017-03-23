@@ -11,8 +11,35 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import pickle
 import torchvision
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import f1_score
+
+def f_score(y, y_hat):
+
+    correct = y.flatten()
+    predicted = y_hat.flatten()
+
+    precision, recall, thresholds = precision_recall_curve(correct, predicted)
+    f_score = 2 * precision * recall / (precision + recall)
+
+    i_max = f_score.nanargmax()
+    f_max = f_score[i_max]
+
+    return f_max
 
 
+def f_score(y, y_hat):
+
+    correct = y.flatten()
+    predicted = y_hat.flatten()
+
+    precision, recall, thresholds = precision_recall_curve(correct, predicted)
+    f_score = 2 * precision * recall / (precision + recall)
+
+    i_max = f_score.nanargmax()
+    f_max = f_score[i_max]
+
+    return f_max
 
 def tag_freq(tags):
     indiv_tf = {}

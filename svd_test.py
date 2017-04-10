@@ -17,7 +17,7 @@ start =time.time()
 
 n = 20000
 
-num_tags = 100
+num_tags = 50000
 
 #load all lyric data into pandas dataframe
 df = pd.read_csv('lyric_data.csv', index_col=0)
@@ -43,6 +43,10 @@ important_tags = dict(zip(important_tags, range(len(important_tags))))
 # maps each of the tags int 'tags' to an int index
 indices = tag2index(tags, important_tags)
 
+print('creating y matirx')
+
+start =time.time()
+
 # Convert indices to binary vectors of tags
 y = np.zeros((len(indices), num_tags))
 for i, tags in enumerate(indices):
@@ -50,20 +54,25 @@ for i, tags in enumerate(indices):
         y[i, tag] = 1
 
 
-# Build vocabulary and tokenizer
-vect = CountVectorizer(max_features=n, stop_words='english' , ngram_range=(1, 2))
-X = vect.fit_transform(df['lyrics'])
-vocab = vect.vocabulary_
-tok = vect.build_analyzer()
+from scipy.sparse import csr_matrix
+from sklearn.decomposition import TruncatedSVD
+print(time.time() - start)
 
-print(X.shape)
+print('converting to sparse')
+y_sparse = csr_matrix(y)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print(time.time() - start)
 
-#model = OneVsRestClassifier(MultinomialNB()).fit(X_train,y_train)
-model = OneVsRestClassifier(LogisticRegression(C=1)).fit(X_train,y_train)
+print('starting svd')
+svd = TruncatedSVD(n_components=100)
+svd.fit(y_sparse)
 
-y_hat = model.predict_proba(X_test)
+print(svd.explained_variance_ratio_)
+print(svd.explained_variance_ratio_.sum()) 
+print(time.time() - start)
+
+
+'''
 
 def evaluate(y,y_hat):
 
@@ -83,36 +92,9 @@ def evaluate(y,y_hat):
 
     return auc,f_max,hamming,max_thresh
 
-auc_train,f_max_train,hamming_train , max_thresh_train = evaluate(y_train, model.predict_proba(X_train))
-
-auc_test,f_max_test,hamming_test , max_thresh_test = evaluate(y_test, model.predict_proba(X_test))
-
-print('total time: ' , time.time() - start)
-
-print('\nTRAINING ACCURACY')
-print("AUC: " , auc_train)
-print("F Score: " , f_max_train)
-print("Hamming Loss: " , hamming_train)
-
-print("\nTESTING ACCURACY")
-print("AUC: " , auc_test)
-print("F Score: " , f_max_test)
-print("Hamming Loss: " , hamming_test)
-
-
 #pickle.dump(model,open('nb.p','wb'))
-
 '''
-y_hat = model.predict_proba(X_test) > max_thresh_test
-
-tags = [clean_tags(raw) for raw in list(df['tags'])]
-
-index2tag = {v: k for k, v in important_tags.items()}
-
-num_out = 0
-
-#Print out examples of where we are way off for analysis
-for i in range(X_test.shape[0]):
+'''
 
     if hamming_loss(y_test[i] , y_hat[i]) > hamming_test:
         

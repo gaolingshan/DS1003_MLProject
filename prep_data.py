@@ -17,7 +17,7 @@ from scipy import sparse
 
 n = 20000
 
-num_tags = 100
+num_tags = 1000
 
 #load all lyric data into pandas dataframe
 df = pd.read_csv('lyric_data.csv', index_col=0)
@@ -67,7 +67,8 @@ for i in range(num_tags):
     if i % 100 == 0:
         print(i)
 
-sparse.save_npz('X_song.npy',X)
-#np.save('X_song.npy',X)
+#sparse.save_npz('X_song.npy',X)
+
+np.save('X_song.npy',X.toarray())
 np.save('X_label.npy' , tag_features)
 np.save('y.npy',y)

@@ -14,9 +14,9 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import hamming_loss
 from sklearn.metrics import f1_score
 import time
-
+from scipy.spatial.distance import pdist
 from sklearn.metrics import f1_score
-
+from sklearn.metrics.pairwise import pairwise_distances
 
 class ML_KNN():
 
@@ -26,21 +26,32 @@ class ML_KNN():
         self.k = k
         self.num_labels = num_labels
 
+    def nearest_neighbors(self,X,X_test=None):
+
+        if X_test is not None:
+            D = pairwise_distances(X_test,X)
+        else:
+            D = pairwise_distances(X)
+
+        neighbors = D.argpartition( self.k , axis=1)[:,:self.k]
+        return(neighbors)
+
     def fit(self, X, y):
 
         # identify prior probabilities
-        counts = y_train.sum(axis=0)
+        counts = y.sum(axis=0)
         self.H = (counts + 1) / (counts + 1).sum(axis=0).sum()
 
         # Fit posterior probabilities
-        self.nn.fit(X)
-        N = self.nn.kneighbors(X)
+        #self.nn.fit(X)
+        #N = self.nn.kneighbors(X)
+        N = self.nearest_neighbors(X)
 
         c1 = np.zeros((self.k + 1, self.num_labels))
         c0 = np.zeros((self.k + 1, self.num_labels))
 
-        for i in range(500):
-            delta = y_train[N[1][i]].sum(axis=0).astype(int)
+        for i in range(X.shape[0]):
+            delta = y[N[i]].sum(axis=0).astype(int)
 
             mask = np.nonzero(y[i])
             mask_neg = np.nonzero(1 - y[i])
@@ -50,18 +61,22 @@ class ML_KNN():
 
         self.E_H1 = (c1 + 1) / (c1 + 1).sum(axis=0)
         self.E_H0 = (c0 + 1) / (c0 + 1).sum(axis=0)
+        self.X_train = X
+        self.y_train = y
 
     def predict(self, X):
 
-        N_test = self.nn.kneighbors(X)
+        #N_test = self.nn.kneighbors(X)
+        N = self.nearest_neighbors(self.X_train,X)
 
         y_hat = np.zeros((X.shape[0], self.num_labels))
 
         for i in range(X.shape[0]):
-            count = y_train[N_test[1][i]].sum(axis=0).astype(int)
 
-            prob_hasLabel = self.E_H1[tuple(count), tuple(range(100))] * self.H
-            prob_noLabel = self.E_H0[tuple(count), tuple(range(100))] * (1 - self.H)
+            count = self.y_train[N[i]].sum(axis=0).astype(int)
+
+            prob_hasLabel = self.E_H1[tuple(count), tuple(range(self.num_labels))] * self.H
+            prob_noLabel = self.E_H0[tuple(count), tuple(range(self.num_labels))] * (1 - self.H)
 
             y_hat[i] = 1 * (prob_hasLabel > prob_noLabel)
 
@@ -119,11 +134,23 @@ X = vect.fit_transform(df['lyrics'])
 vocab = vect.vocabulary_
 tok = vect.build_analyzer()
 
+np.save('X.npy' ,X)
+np.save('y.npy',y)
+
+p=.15
+
+idx= np.random.permutation(X.shape[0])
+idx = idx[int(np.floor(X.shape[0]*p )) : ]
+
+X =X[idx]
+y =y[idx]
+
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 model =ML_KNN(5,100)
-model.fit(X_train[:50000],y_train[:50000])
+model.fit(X_train,y_train)
 
-print(model.score(X_train[:50000],y_train[:50000]))
+print(model.score(X_train,y_train))
 print(model.score(X_test,y_test))
 

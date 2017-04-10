@@ -19,8 +19,9 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from scipy.sparse import csr_matrix
+from scipy import sparse
 
-X_song = csr_matrix(np.load('X_song.npy'))
+X_song = sparse.load_npz('X_song.npy')
 X_tag = np.load('X_label.npy')
 y = np.load('y.npy')
 
